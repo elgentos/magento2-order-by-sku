@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * Copyright Elgentos. All rights reserved.
+ * https://elgentos.nl/
+ */
+
+declare(strict_types=1);
+
+/** @var Template $block */
+/** @var Magewire $magewire */
+/** @var Escaper $escaper */
+
+/** @var ViewModelRegistry $viewModels */
+
+use Elgentos\OrderBySku\Magewire\OrderBySku as Magewire;
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HeroiconsSolid;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+$heroicons = $viewModels->require(HeroiconsSolid::class);
+$icons = $viewModels->require(SvgIcons::class);
+
+?>
+<div>
+    <script>
+        document.addEventListener('livewire:load', () => {
+            window.Magewire.on('productAddedToCart', function () {
+                window.dispatchEvent(new CustomEvent('reload-customer-section-data'));
+            });
+        });
+    </script>
+
+    <div class="bg-white">
+        <button class="absolute right-[6px]" @click="open = false">
+            <?= /** @noEscape */ $icons->renderHtml('remove', 'w-7 h-7 fill-blue-lighter') ?>
+        </button>
+        <div class="grid grid-cols-8 gap-2 px-3 py-6">
+            <div class="col-span-4">
+                <label class="px-2" for="sku"><?= $escaper->escapeHtml(__('Art. nr.')) ?></label>
+            </div>
+            <div class="col-span-4">
+                <label class="px-2" for="qty"><?= $escaper->escapeHtml(__('Quantity')) ?></label>
+            </div>
+            <div class="col-span-8">
+                <?php foreach ($magewire->fields as $key => $values) : ?>
+                    <div class="grid grid-cols-8 gap-2 py-2" wire:key="<?= $escaper->escapeHtmlAttr($values['id']) ?>">
+                        <div class="col-span-4">
+                            <input class="block w-full !mb-0 border rounded border-gray-lightest"
+                                   type="text"
+                                   id="sku-<?= $escaper->escapeHtmlAttr($values['id']) ?>"
+                                   placeholder="24-WB04"
+                                   wire:model.defer="fields.<?= $escaper->escapeHtmlAttr($key) ?>.sku"/>
+                        </div>
+                        <div class="col-span-2">
+                            <input class="block w-full !mb-0 border rounded border-gray-lightest"
+                                   type="number" id="qty-<?= $escaper->escapeHtmlAttr($values['id']) ?>"
+                                   name="qty"
+                                   wire:model.defer="fields.<?= $escaper->escapeHtmlAttr($key) ?>.qty"/>
+                        </div>
+                        <button class="col-span-2 flex items-center justify-center " wire:click="removeFields(<?= $escaper->escapeHtmlAttr($key) ?>)">
+                            <?= /** @noEscape */ $icons->renderHtml('delete', 'w-8 h-8 fill-blue-lighter') ?>
+                        </button>
+                        <?php if ($magewire->hasErrors()) : ?>
+                            <div class="col-span-8">
+                                <ul>
+                                    <?php if ($magewire->hasError("fields.$key.sku")) : ?>
+                                        <li class="text-sm text-red">
+                                            <?= $escaper->escapeHtml(__($magewire->getError("fields.$key.sku"))) ?>
+                                        </li>
+                                    <?php endif; ?>
+
+                                    <?php if ($magewire->hasError("fields.$key.qty")) : ?>
+                                        <li class="text-sm text-red">
+                                            <?= $escaper->escapeHtml(__($magewire->getError("fields.$key.qty"))) ?>
+                                        </li>
+                                    <?php endif; ?>
+                                </ul>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="px-3 py-6 border-t border-gray-lightest flex flex-col gap-4 items-center">
+            <button class="btn btn-blue w-max text-center" wire:click="addFields"><?= $escaper->escapeHtml(__('Add row')) ?></button>
+            <button class="btn btn-orange w-max text-center" wire:click="addToCart"><?= $escaper->escapeHtml(__('Add to cart')) ?></button>
+        </div>
+    </div>
+</div>
